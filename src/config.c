@@ -1,6 +1,7 @@
 #include "config.h"
-// #include "debug.h"
+#include "logging.h"
 #include "spotify.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,8 @@ Config *new_config(const char *bin_name) {
 
   conf->spotify_creds.client_id = NULL;
   conf->spotify_creds.client_secret = NULL;
-  conf->spotify_creds.user_access_token = NULL;
+  conf->spotify_creds.access_token.token = NULL;
+  conf->spotify_creds.access_token.expires_at = 0;
   conf->spotify_creds.user_refresh_token = NULL;
   conf->spotify_creds.redirect_uri = NULL;
 
@@ -24,7 +26,7 @@ Config *read_config_from_file(const char *path, const char *bin_name) {
   FILE *fptr = fopen(path, "r");
 
   if (fptr == NULL) {
-    fprintf(stderr, "Failed to open %s. errno: %d\n", path, errno);
+    errprintf("Failed to open %s. errno: %d\n", path, errno);
     return NULL;
   }
 
@@ -42,7 +44,7 @@ Config *read_config_from_file(const char *path, const char *bin_name) {
 
     if (res != 2) {
       fclose(fptr);
-      fprintf(stderr, "Failed to read config.\n");
+      dbgprintf("Failed to read config.\n");
       return NULL;
     }
 
@@ -55,7 +57,7 @@ Config *read_config_from_file(const char *path, const char *bin_name) {
     } else if (strncmp(key, "SPOTIFY_USER_REFRESH", 50) == 0) {
       config->spotify_creds.user_refresh_token = strndup(val, 500);
     } else {
-      fprintf(stderr, "Unknown config key: %s\n", key);
+      errprintf("Unknown config key: %s\n", key);
       fclose(fptr);
       return NULL;
     }
@@ -77,7 +79,7 @@ Config *load_config(const char *bin_name) {
     strcat(path, "/");
     strcat(path, bin_name);
 
-    printf("attempting to read: %s\n", path);
+    dbgprintf("attempting to read: %s\n", path);
 
     Config *config = read_config_from_file(path, bin_name);
 
