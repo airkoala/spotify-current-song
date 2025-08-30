@@ -3,9 +3,11 @@
 #include "util.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
+#include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 SpotifyCredentials *refresh_token(SpotifyCredentials *creds) {
   // Refresh the access token using the refresh token
@@ -18,7 +20,6 @@ SpotifyCredentials *refresh_token(SpotifyCredentials *creds) {
     return NULL;
   }
 
-
   curl_easy_setopt(curl, CURLOPT_URL, API_ROOT "/token");
 
   char postfields[500];
@@ -28,20 +29,21 @@ SpotifyCredentials *refresh_token(SpotifyCredentials *creds) {
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfields);
 
   struct curl_slist *headers = NULL;
-  headers = curl_slist_append(headers,
-                    "Content-Type: application/x-www-form-urlencoded");
+  headers = curl_slist_append(
+      headers, "Content-Type: application/x-www-form-urlencoded");
 
   // Header requires client_id:client_secret pair to be b64 encoded
   char auth_pair[100];
   sprintf(auth_pair, "%s:%s", creds->client_id, creds->client_secret);
 
-  char *b64_auth_pair = b64enc(auth_pair, strnlen(auth_pair, 100));
+  char *b64_auth_pair = b64enc((uint8_t *)auth_pair, strnlen(auth_pair, 100));
 
   char auth_header[200];
   sprintf(auth_header, "Authorization: Basic %s", b64_auth_pair);
   headers = curl_slist_append(headers, auth_header);
 
-  dbgprintf("postfields: %s, auth_pair: %s, b64_auth_pair: %s\n", postfields, auth_pair, b64_auth_pair);
+  dbgprintf("postfields: %s, auth_pair: %s, b64_auth_pair: %s\n", postfields,
+            auth_pair, b64_auth_pair);
   dbgprintf("auth_header: %s\n", auth_header);
   free(b64_auth_pair);
 
@@ -64,12 +66,67 @@ SpotifyCredentials *refresh_token(SpotifyCredentials *creds) {
     return NULL;
   }
 
+  long response_code;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+
+  dbgprintf("Response code: %ld\n", response_code);
   dbgprintf("Received %zu bytes: %s\n", res_body.size, res_body.memory);
 
-  // TODO: Parse response
+  // {
+  //   "access_token":
+  //   "BQAt2vHRBXU85Q1IERVueYcuEPF5Uw_yg6Cwp19pAORIMDH6MCHIcWqdTYxs8-63FWVM6jY4Exh1kEeWrlV3Ohkq1DXCAUqcJI59W_IqHfZHYrOqTcAY_v9oXMyJpaZMpqBp1BZEE3ovVb6VLfQJwxkYzZgI-tvhaoH5S7vsjQ-bX99yVGpKN8foIeq5xm3Ejbrz5tvqYlURd_332zgqWWWcLu8BdoR4wRPhZTXO0sbU7pOHYN1wejwHQnAV-lWwEMrUopU6PA8_9LCL-lN6Jg1GIu6oSAnkEim-z4ykxI3Tmu_ML2sgsIYa3XsIUfsxhlgiVHP8OcdJDiFjBcrqWY50VZ7mCO2P",
+  //   "token_type": "Bearer",
+  //   "expires_in": 3600,
+  //   "scope": "playlist-read-private playlist-read-collaborative
+  //   ugc-image-upload user-follow-read playlist-modify-private user-read-email
+  //   user-read-private user-follow-modify user-modify-playback-state
+  //   user-library-read user-library-modify playlist-modify-public
+  //   user-read-playback-state user-read-currently-playing
+  //   user-read-recently-played user-read-playback-position user-top-read"
+  // }
 
+  if (response_code != 200) {
+    errprintf("Could not refresh access token. Received %ld", response_code);
+    return NULL;
+  }
 
+  json_error_t error;
+  json_t *root = json_loads(res_body.memory, 0, &error);
   free(res_body.memory);
+
+  if (!root) {
+    errprintf("Error decoding JSON response on line %d: %s\n", error.line,
+              error.text);
+    return NULL;
+  }
+
+  json_t *access_token = json_object_get(root, "access_token");
+  if (!json_is_string(access_token)) {
+    errprintf("Failed to get access token.\n");
+    json_decref(root);
+    return NULL;
+  }
+
+  json_t *expires_in = json_object_get(root, "expires_in");
+  if (!json_is_integer(expires_in)) {
+    errprintf("Failed to get expires_in.\n");
+    json_decref(root);
+    return NULL;
+  }
+
+  creds->access_token.token = strdup(json_string_value(access_token));
+  creds->access_token.expires_at = time(NULL) + json_integer_value(expires_in);
+  dbgprintf(
+      "creds->access_token.token: %s, creds->access_token.expires_at: %u\n",
+      creds->access_token.token, creds->access_token.expires_at);
+
+  json_t *refresh_token = json_object_get(root, "refresh_token");
+  if (json_is_string(refresh_token)) {
+    dbgprintf("New refresh token issued. Updating.\n");
+    creds->user_refresh_token = strdup(json_string_value(refresh_token));
+  }
+
+  json_decref(root);
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
