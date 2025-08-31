@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#define API_ROOT "https://accounts.spotify.com/api"
 
 typedef struct SpotifyAccessToken {
   char *token;
@@ -17,3 +16,4 @@ typedef struct SpotifyCredentials {
 } SpotifyCredentials;
 
 SpotifyCredentials *refresh_token(SpotifyCredentials *creds);
+char *get_or_refresh_access_token(SpotifyCredentials *creds);

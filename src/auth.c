@@ -1,4 +1,4 @@
-#include "spotify.h"
+#include "auth.h"
 #include "logging.h"
 #include "util.h"
 #include <curl/curl.h>
@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#define API_ROOT "https://accounts.spotify.com/api"
 
 SpotifyCredentials *refresh_token(SpotifyCredentials *creds) {
   // Refresh the access token using the refresh token
@@ -73,16 +75,11 @@ SpotifyCredentials *refresh_token(SpotifyCredentials *creds) {
   dbgprintf("Received %zu bytes: %s\n", res_body.size, res_body.memory);
 
   // {
-  //   "access_token":
-  //   "BQAt2vHRBXU85Q1IERVueYcuEPF5Uw_yg6Cwp19pAORIMDH6MCHIcWqdTYxs8-63FWVM6jY4Exh1kEeWrlV3Ohkq1DXCAUqcJI59W_IqHfZHYrOqTcAY_v9oXMyJpaZMpqBp1BZEE3ovVb6VLfQJwxkYzZgI-tvhaoH5S7vsjQ-bX99yVGpKN8foIeq5xm3Ejbrz5tvqYlURd_332zgqWWWcLu8BdoR4wRPhZTXO0sbU7pOHYN1wejwHQnAV-lWwEMrUopU6PA8_9LCL-lN6Jg1GIu6oSAnkEim-z4ykxI3Tmu_ML2sgsIYa3XsIUfsxhlgiVHP8OcdJDiFjBcrqWY50VZ7mCO2P",
+  //   "access_token": "...",
   //   "token_type": "Bearer",
   //   "expires_in": 3600,
-  //   "scope": "playlist-read-private playlist-read-collaborative
-  //   ugc-image-upload user-follow-read playlist-modify-private user-read-email
-  //   user-read-private user-follow-modify user-modify-playback-state
-  //   user-library-read user-library-modify playlist-modify-public
-  //   user-read-playback-state user-read-currently-playing
-  //   user-read-recently-played user-read-playback-position user-top-read"
+  //   "scope": "...",
+  //   "refresh_token": "..." // (optional)
   // }
 
   if (response_code != 200) {
@@ -131,4 +128,16 @@ SpotifyCredentials *refresh_token(SpotifyCredentials *creds) {
   curl_easy_cleanup(curl);
 
   return creds;
+}
+
+char *get_or_refresh_access_token(SpotifyCredentials *creds) {
+  if (time(NULL) >= creds->access_token.expires_at) {
+    SpotifyCredentials *res = refresh_token(creds);
+    if (res == NULL) {
+      errprintf("Failed to refresh token.\n");
+      return NULL;
+    }
+  }
+
+  return creds->access_token.token;
 }

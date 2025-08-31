@@ -1,17 +1,11 @@
 #include "config.h"
 #include "logging.h"
-#include "spotify.h"
+#include "playback_status.h"
+#include "auth.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-
-typedef struct SpotifyStatus {
-  char *song_name;
-  char *artist_name;
-  uint32_t position;
-  uint32_t duration;
-} SpotifyStatus;
 
 int main(int argc, char *argv[]) {
   Config *config = load_config("spotify-current-song");
@@ -23,13 +17,24 @@ int main(int argc, char *argv[]) {
   dbgprintf("User Refresh Token: %s\n", config->spotify_creds.user_refresh_token);
   printf("\n");
 
-  SpotifyCredentials *res = refresh_token(&config->spotify_creds);
-  if (res == NULL) {
-    errprintf("Failed to refresh token.\n");
-    return EXIT_FAILURE;
-  }
+  // SpotifyCredentials *res = refresh_token(&config->spotify_creds);
+  // if (res == NULL) {
+  //   errprintf("Failed to refresh token.\n");
+  //   return EXIT_FAILURE;
+  // }
 
-  dbgprintf("Refreshed token: %s\n", res->access_token.token);
+  // dbgprintf("Access token: %s\n\n", res->access_token.token);
+
+  PlaybackStatus pbs = fetch_playback_status(&config->spotify_creds);
+
+  dbgprintf("Playback Status:\n");
+  dbgprintf("Song Name: %s\n", pbs.song_name);
+  dbgprintf("Artist Name: %s\n", pbs.artist_name);
+  dbgprintf("Progress: %u\n", pbs.progress);
+  dbgprintf("Duration: %u\n", pbs.duration);
+  dbgprintf("Updated At: %u\n", pbs.updated_at);
+  dbgprintf("Status: %d\n", pbs.status);
+
 
   return EXIT_SUCCESS;
 }

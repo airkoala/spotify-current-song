@@ -1,6 +1,6 @@
 #include "config.h"
 #include "logging.h"
-#include "spotify.h"
+#include "auth.h"
 
 #include <errno.h>
 #include <stdio.h>
