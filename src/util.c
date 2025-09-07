@@ -56,8 +56,9 @@ char *b64enc(const uint8_t *in, size_t len) {
 }
 
 void ms_to_timestamp(uint32_t ms, char *dst) {
-  uint32_t mins = ms / 1000 / 60;
+  uint32_t mins = (ms / 1000) / 60;
   uint32_t secs = (ms / 1000) % 60;
+  printf("ms: %u, mins: %u, secs: %u\n", ms, mins, secs);
 
   sprintf(dst, "%u:%02u", mins, secs);
 }
@@ -66,18 +67,17 @@ size_t push_n_graphemes(char *dst, const char *src, size_t n) {
   // actually counting unicode codepoints
   size_t i = 0;
   while (src[i] && n > 0) {
-    uint32_t cp;
-    size_t cp_width = grapheme_decode_utf8(&src[i], SIZE_MAX, &cp);
+    size_t off = grapheme_next_character_break_utf8(&src[i], SIZE_MAX);
 
-    if (!cp) {
+    if (off == 0) {
       break;
     }
 
     if (dst) {
-      dst = stpncpy(dst, &src[i], cp_width);
+      dst = stpncpy(dst, &src[i], off);
     }
 
-    i += cp_width;
+    i += off;
     n--;
   }
 
@@ -90,12 +90,10 @@ size_t push_n_graphemes(char *dst, const char *src, size_t n) {
 
 size_t count_graphemes(const char *str) {
   size_t n = 0;
-  uint32_t cp;
+  size_t off;
 
-  while ((str += grapheme_decode_utf8(str, SIZE_MAX, &cp)) > 0) {
-    if (cp == 0) {
-      break;
-    }
+  while ((off = grapheme_next_character_break_utf8(str, SIZE_MAX)) != 0) {
+    str += off;
     n++;
   }
 

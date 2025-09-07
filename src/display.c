@@ -13,8 +13,8 @@ const char SCROLLER_FORMAT[] = "a - t";
 #define SCROLLER_STEP_DELAY_MS 500
 #define MAX_LENGTH 30
 #define PAUSE_ICON "󰏥 "
-// #define ELLIPSIS "…"
-#define ELLIPSIS "-"
+#define ELLIPSIS "…"
+// #define ELLIPSIS "-"
 
 void build_output(char *dst, const PlaybackStatus *pbs) {
   if (pbs->status == STOPPED) {
