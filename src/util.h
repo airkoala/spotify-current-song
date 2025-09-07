@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
 // Base64 encode input data
 char *b64enc(const uint8_t *in, size_t len);
 
@@ -34,3 +37,8 @@ static size_t write_mem_callback(void *contents, size_t size, size_t nmemb,
 
   return realsize;
 }
+
+void ms_to_timestamp(uint32_t ms, char *dst);
+
+// Returns: number of bytes pushed - 1 (null terminator)
+size_t push_n_graphemes(char *dst, const char *src, size_t n);

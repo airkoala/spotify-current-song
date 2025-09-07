@@ -26,7 +26,7 @@ Config *read_config_from_file(const char *path, const char *bin_name) {
   FILE *fptr = fopen(path, "r");
 
   if (fptr == NULL) {
-    errprintf("Failed to open %s. errno: %d\n", path, errno);
+    dbgprintf("Failed to open %s. errno: %d\n", path, errno);
     return NULL;
   }
 

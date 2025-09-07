@@ -55,3 +55,29 @@ char *b64enc(const uint8_t *in, size_t len) {
   return out;
 }
 
+void ms_to_timestamp(uint32_t ms, char *dst) {
+  uint32_t mins = ms / 1000 / 60;
+  uint32_t secs = (ms / 1000) % 60;
+
+  sprintf(dst, "%u:%02u", mins, secs);
+}
+
+size_t push_n_graphemes(char *dst, const char *src, size_t n) {
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (src[i] == '\0') {
+      break;
+    }
+
+    if (dst) {
+      *dst = src[i];
+      dst++;
+    }
+  }
+
+  if (dst) {
+    *dst = '\0';
+  }
+
+  return i;
+}
