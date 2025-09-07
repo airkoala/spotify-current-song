@@ -11,7 +11,7 @@ const char FORMAT[] = " [sp/d] c";
 const char SCROLLER_FORMAT[] = "a - t";
 
 #define SCROLLER_STEP_DELAY_MS 500
-#define MAX_LENGTH 60
+#define MAX_LENGTH 30
 #define PAUSE_ICON "󰏥 "
 // #define ELLIPSIS "…"
 #define ELLIPSIS "-"
@@ -49,7 +49,7 @@ void build_output(char *dst, const PlaybackStatus *pbs) {
   }
 }
 
-char *build_scroller(char *dst, const PlaybackStatus *pbs, uint32_t scroller_window_length,
+char *build_scroller(char *dst, const PlaybackStatus *pbs, uint32_t scroller_window_width,
                      uint32_t step_delay_ms) {
   // Intentionally oversized.
   char scroller[1000];
@@ -69,13 +69,12 @@ char *build_scroller(char *dst, const PlaybackStatus *pbs, uint32_t scroller_win
     }
   }
 
-  // TODO: convert to use graphemes
-  size_t full_scroller_len = strlen(scroller);
-  dbgprintf("full_scroller_len: %zu, full_scroller: %s\n", full_scroller_len,
-         scroller);
+  dbgprintf("scroller: %s\n", scroller);
+  size_t n_units_full_scroller = count_graphemes(scroller);
+  dbgprintf("n_units_full_scroller: %zu\n", n_units_full_scroller);
 
-  const size_t max_scroll_pos = (scroller_window_length <= full_scroller_len)
-                                ? (full_scroller_len - scroller_window_length + 1)
+  const size_t max_scroll_pos = (scroller_window_width <= n_units_full_scroller)
+                                ? (n_units_full_scroller - scroller_window_width + 1)
                                 : 1;
 
   // in graphemes
@@ -85,13 +84,13 @@ char *build_scroller(char *dst, const PlaybackStatus *pbs, uint32_t scroller_win
   if (start_pos > 0) {
     // Push ELLIPSIS and skip first char in scroller
     dst += push_n_graphemes(dst, ELLIPSIS, 1);
-    scrollerptr++;
-    scroller_window_length--;
+    scrollerptr += push_n_graphemes(NULL, scrollerptr, 1);
+    scroller_window_width--;
   }
 
   dbgprintf("start_pos: %zu, max_scroll_pos: %zu\n", start_pos, max_scroll_pos);
 
-  size_t n_bytes = push_n_graphemes(dst, scrollerptr, scroller_window_length - 1);
+  size_t n_bytes = push_n_graphemes(dst, scrollerptr, scroller_window_width - 1);
   dst += n_bytes;
   scrollerptr += n_bytes;
 

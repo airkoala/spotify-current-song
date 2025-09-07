@@ -6,8 +6,8 @@
 enum PlaybackState { PLAYING, PAUSED, STOPPED };
 
 typedef struct PlaybackStatus {
-  char song_name[100];
-  char artist_name[100];
+  char song_name[1000];
+  char artist_name[1000];
   uint32_t progress;
   uint32_t duration;
   uint32_t updated_at;

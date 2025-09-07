@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
@@ -18,15 +19,15 @@ int main(int argc, char *argv[]) {
   dbgprintf("User Refresh Token: %s\n", config->spotify_creds.user_refresh_token);
   dbgprintf("\n");
 
-  SpotifyCredentials *creds = refresh_token(&config->spotify_creds);
-  if (creds == NULL) {
-    errprintf("Failed to refresh token.\n");
-    return EXIT_FAILURE;
-  }
-
-  dbgprintf("Access token: %s\n\n", creds->access_token.token);
-
-  PlaybackStatus pbs = fetch_playback_status(creds);
+  // SpotifyCredentials *creds = refresh_token(&config->spotify_creds);
+  // if (creds == NULL) {
+  //   errprintf("Failed to refresh token.\n");
+  //   return EXIT_FAILURE;
+  // }
+  //
+  // dbgprintf("Access token: %s\n\n", creds->access_token.token);
+  //
+  // PlaybackStatus pbs = fetch_playback_status(creds);
 
   // PlaybackStatus pbs = {
   //   .song_name = "Ingenting kan forhindre at små struber skælver en forårsnat",
@@ -37,6 +38,16 @@ int main(int argc, char *argv[]) {
   //   .updated_at = 150278575,
   //   .status = PLAYING
   // };
+
+  PlaybackStatus pbs = {
+    .song_name = "এক জীবনে এত দুঃখ আমায় কেন দিলি""এক জীবনে এত দুঃখ আমায় কেন দিলি",
+    .artist_name = "Ithika Rahman",
+    .progress = 0,
+    // .duration = 232594,
+    .duration = 20 * 1000,
+    .updated_at = time(NULL),
+    .status = PLAYING
+  };
 
   dbgprintf("Playback Status:\n");
   dbgprintf("Song Name: %s\n", pbs.song_name);
@@ -54,7 +65,6 @@ int main(int argc, char *argv[]) {
     pbs.progress += 500;
     usleep(500 * 1000);
   }
-  // printf("output: %s\n", output);
 
   return EXIT_SUCCESS;
 }

@@ -42,3 +42,4 @@ void ms_to_timestamp(uint32_t ms, char *dst);
 
 // Returns: number of bytes pushed - 1 (null terminator)
 size_t push_n_graphemes(char *dst, const char *src, size_t n);
+size_t count_graphemes(const char *str);

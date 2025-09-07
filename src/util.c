@@ -1,5 +1,5 @@
 #include "util.h"
-#include "logging.h"
+#include <grapheme.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,16 +63,22 @@ void ms_to_timestamp(uint32_t ms, char *dst) {
 }
 
 size_t push_n_graphemes(char *dst, const char *src, size_t n) {
-  size_t i;
-  for (i = 0; i < n; i++) {
-    if (src[i] == '\0') {
+  // actually counting unicode codepoints
+  size_t i = 0;
+  while (src[i] && n > 0) {
+    uint32_t cp;
+    size_t cp_width = grapheme_decode_utf8(&src[i], SIZE_MAX, &cp);
+
+    if (!cp) {
       break;
     }
 
     if (dst) {
-      *dst = src[i];
-      dst++;
+      dst = stpncpy(dst, &src[i], cp_width);
     }
+
+    i += cp_width;
+    n--;
   }
 
   if (dst) {
@@ -80,4 +86,18 @@ size_t push_n_graphemes(char *dst, const char *src, size_t n) {
   }
 
   return i;
+}
+
+size_t count_graphemes(const char *str) {
+  size_t n = 0;
+  uint32_t cp;
+
+  while ((str += grapheme_decode_utf8(str, SIZE_MAX, &cp)) > 0) {
+    if (cp == 0) {
+      break;
+    }
+    n++;
+  }
+
+  return n;
 }
